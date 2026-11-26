@@ -1,0 +1,40 @@
+# 비밀 값 (API 키 등). 키 이름은 .env.example 참고
+.env
+.env.*
+!.env.example
+
+# 원본 데이터 (용량이 크고 병원명이 들어 있어 올리지 않음, 출처는 README에 기록)
+data/raw/
+# 가공 데이터 (병원명 포함)
+data/processed/*
+!data/processed/.gitkeep
+
+# 병원명이 들어간 결과물 (공개본은 outputs/public/)
+outputs/top30.csv
+outputs/proposals/
+
+# 대용량 데이터 파일 (실수로 올라가지 않게)
+*.zip
+*.xlsx
+*.parquet
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# 운영체제·편집기
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# 로그·임시 파일
+*.log
+*.tmp
+
+# Claude Code 개인 설정
+.claude/settings.local.json

@@ -1,0 +1,1300 @@
+<title>어느 안과에 먼저 갈까</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 영업 브리핑 리포트. 880px 한 단에 본문은 68자 폭, 표·도표는 넓게.
+   색은 '누가 했나'를 뜻한다: 파랑 = AI 에이전트가 실행, 호박색 = 내가 판단. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --sunk: #eaeef3;
+  --fg: #0f1722;
+  --fg-2: #4d5868;
+  --line: #d9e0e8;
+  --accent: #1d6bd0;
+  --accent-soft: #e3edfa;
+  --dot-off: #cdd6e1;
+  --human: #b35a0b;
+  --human-soft: #fbf0e4;
+  --band: #e6edf6;
+  --bad: #c2362b;
+  --bad-soft: #fcecea;
+  --font-display: "IBM Plex Sans KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-num: "IBM Plex Sans KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;  /* 큰 숫자·라벨용 (본문과 같은 계열, 고정폭 글꼴 안 씀) */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #161d27; --sunk: #121820; --fg: #ecf0f5; --fg-2: #a5afbd; --line: #28323e;
+    --accent: #5d9ff2; --accent-soft: #19293d; --dot-off: #323e4c; --human: #f0a457; --human-soft: #2e2216; --band: #131b25; --bad: #f2786c; --bad-soft: #351b19; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #161d27; --sunk: #121820; --fg: #ecf0f5; --fg-2: #a5afbd; --line: #28323e;
+  --accent: #5d9ff2; --accent-soft: #19293d; --dot-off: #323e4c; --human: #f0a457; --human-soft: #2e2216; --band: #131b25; --bad: #f2786c; --bad-soft: #351b19; color-scheme: dark;
+}
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  /* 한글이 단어 중간에서 끊기지 않게: 띄어쓰기 단위로 줄바꿈, 너무 긴 단어만 예외 */
+  word-break: keep-all; overflow-wrap: break-word;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 72px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 80px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.32; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.3rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.4rem, 3.2vw, 1.75rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.06rem; font-weight: 700; }
+p { margin: 0; }
+p, li, .sub, .facet-sub, caption { text-wrap: pretty; }
+section { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 64px; }
+section > p, section > ul, .prose { max-width: 68ch; }
+.note { font-size: 0.85rem; color: var(--fg-2); line-height: 1.65; max-width: 72ch; }
+.num { font-variant-numeric: tabular-nums; }
+.assume { color: var(--fg-2); font-size: 0.85em; white-space: nowrap; }
+a { color: var(--accent); }
+strong { font-weight: 700; }
+
+/* 상단 목차 (붙어 다님) */
+.toc { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding-inline: max(16px, env(safe-area-inset-left, 0px)); }
+.toc-inner { max-width: 880px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; padding-block: 10px; scrollbar-width: none; }
+.toc a { flex: none; font-size: 0.82rem; font-weight: 500; color: var(--fg-2); text-decoration: none; padding: 4px 10px; border-radius: 999px; }
+.toc a:hover { color: var(--fg); background: var(--sunk); }
+.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.toc a.ai { color: var(--accent); font-weight: 700; }
+.toc a.on { color: var(--surface); background: var(--fg); }
+.toc a.ai.on { background: var(--accent); }
+
+/* 섹션 머리 */
+.sec-head { display: flex; flex-direction: column; gap: 6px; }
+.stage { font-family: var(--font-num); font-size: 0.76rem; font-weight: 600; color: var(--fg-2); letter-spacing: 0.02em; }
+
+/* 첫 화면 */
+.wrap > header { display: flex; flex-direction: column; gap: 22px; padding-top: 56px; }
+.eyebrow { font-size: 0.8rem; letter-spacing: 0.06em; color: var(--fg-2); font-weight: 500; }
+.lede { font-size: 1.15rem; max-width: 60ch; }
+.lede strong { background: linear-gradient(transparent 60%, var(--accent-soft) 60%); }
+.byline { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.chip i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
+.chip.ai { color: var(--accent); background: var(--accent-soft); }
+.chip.me { color: var(--human); background: var(--human-soft); }
+
+.hero-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 24px; box-shadow: 0 1px 2px rgba(15, 23, 34, 0.04), 0 8px 24px -12px rgba(15, 23, 34, 0.12); }
+.hero-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.waffle-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; }
+.waffle { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.band { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 8px; border-radius: 8px; }
+.band.top { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.dots { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px; }
+.dots i { display: block; aspect-ratio: 1; border-radius: 50%; background: var(--dot-off); max-width: 100%; }
+.dots i.on { background: var(--accent); }
+.band-label { display: flex; flex-direction: column; line-height: 1.35; }
+.band-label b { font-family: var(--font-body); font-size: 1rem; font-weight: 600; }
+.band.top .band-label b { color: var(--accent); }
+.band-label span { font-size: 0.74rem; color: var(--fg-2); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--fg-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.hero-stats { display: flex; flex-direction: column; gap: 16px; border-left: 1px solid var(--line); padding-left: 22px; min-width: 0; }
+.stat { display: flex; flex-direction: column; gap: 1px; }
+.stat .big { font-family: var(--font-num); font-size: 1.9rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; }
+.stat .big.a { color: var(--accent); }
+.stat .label { font-weight: 700; font-size: 0.88rem; }
+.stat .sub { font-size: 0.78rem; color: var(--fg-2); line-height: 1.5; }
+
+ul, ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+
+/* 표 */
+/* 첫 화면 질문 */
+.question { font-family: var(--font-display); font-size: clamp(1.1rem, 2.6vw, 1.35rem); font-weight: 500; color: var(--fg-2); max-width: 46ch; }
+
+.phase { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); background: var(--accent-soft); padding: 1px 8px; border-radius: 999px; margin-right: 8px; vertical-align: 2px; width: max-content; }
+.phase.use { color: var(--surface); background: var(--fg); }
+.stat .phase { margin: 0 0 4px; }
+.usepath { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; counter-reset: up; }
+.usepath li { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.usepath li + li::before { content: "→"; position: absolute; left: -12px; top: 50%; transform: translate(-50%, -50%); color: var(--fg-2); font-weight: 700; }
+.usepath b { font-family: var(--font-display); font-size: 0.98rem; line-height: 1.4; }
+.usepath li > span:last-child { font-size: 0.8rem; color: var(--fg-2); line-height: 1.55; }
+.usepath .phase { margin: 0 0 2px; }
+
+/* 핵심 발견: 변수마다 '해당 vs 비해당' 입점 비율 막대 한 쌍 */
+.findings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.finding { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.f-k { font-size: 0.72rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; }
+.f-t { font-family: var(--font-display); font-size: 1.02rem; line-height: 1.4; min-height: 2.8em; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "l v" "b b"; gap: 4px 8px; align-items: baseline; }
+.pair > span { grid-area: l; font-size: 0.8rem; font-weight: 500; }
+.pair > span small { color: var(--fg-2); font-weight: 400; font-size: 0.72rem; }
+.pair > em { grid-area: v; font-style: normal; font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; color: var(--accent); line-height: 1; }
+.pair .track { grid-area: b; height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+.pair .track i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+.pair.off > em { color: var(--fg-2); font-size: 1.05rem; }
+.pair.off .track i { background: var(--dot-off); }
+.f-x { margin-top: 2px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 0.82rem; color: var(--fg-2); }
+.f-x strong { color: var(--fg); font-family: var(--font-display); font-size: 1rem; }
+
+/* 먼저 갈 병원 카드 */
+.leads { display: flex; flex-direction: column; gap: 8px; }
+.lead { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
+.lead.first { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent), 0 8px 24px -16px rgba(29, 107, 208, 0.45); }
+.rank { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; background: var(--sunk); color: var(--fg-2); }
+.lead.first .rank { background: var(--accent); color: var(--surface); }
+.lead-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lead-body > b { font-family: var(--font-display); font-size: 1.05rem; }
+.lead-body .meta { font-size: 0.82rem; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.why { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.why span { font-size: 0.76rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 9px; border-radius: 999px; }
+.prod { font-size: 0.82rem; font-weight: 700; text-align: right; white-space: nowrap; display: flex; flex-direction: column; line-height: 1.3; }
+.prod small { font-weight: 400; color: var(--fg-2); font-size: 0.72rem; }
+.top30 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.top30 > div { border-top: 2px solid var(--fg); padding-top: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.top30 b { font-family: var(--font-display); font-size: 1.5rem; line-height: 1.2; }
+.top30 span { font-size: 0.8rem; color: var(--fg-2); line-height: 1.5; }
+
+/* Top 30 전체 표 + 추천 상품 필터 (기본은 접힘) */
+.all30 { max-width: none; }
+.all30 summary span { font-family: var(--font-body); font-weight: 400; font-size: 0.82rem; color: var(--fg-2); margin-left: 6px; }
+.all30-body { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.filters button { font: inherit; font-size: 0.84rem; font-weight: 600; color: var(--fg-2); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.filters button span { font-weight: 400; margin-left: 2px; }
+.filters button:hover { color: var(--fg); border-color: var(--fg-2); }
+.filters button[aria-pressed="true"] { color: var(--surface); background: var(--fg); border-color: var(--fg); }
+.filters button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.t30 td { padding-block: 10px; }
+.t30 td:nth-child(2) { white-space: nowrap; }
+.t30 .why2 { display: flex; flex-wrap: wrap; gap: 4px; }
+.t30 .why2 span { font-size: 0.74rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.t30 .yes { color: var(--accent); font-weight: 700; }
+.t30 .no { color: var(--fg-2); }
+.t30 tr.top5 td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.prod-tag { font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+
+/* AI 에이전트 섹션: 화면 끝까지 닿는 색 띠 (가로 스크롤 없이) */
+.wide-band { background: var(--band); box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(-56px -100vmax); padding-block: 8px; }
+.wide-band .split, .wide-band .moment { box-shadow: 0 1px 2px rgba(15, 23, 34, 0.05); }
+
+/* 제안서: 검사 시연 + 완성 제안서 미리보기 */
+.checkdemo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.draft, .verdict { border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.draft { background: var(--surface); border: 1px solid var(--line); }
+.draft p { font-size: 0.95rem; line-height: 1.9; }
+.verdict { background: var(--bad-soft); border: 1px solid var(--bad); }
+.cap { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.02em; color: var(--fg-2); }
+.verdict .cap { color: var(--bad); }
+mark.bad { background: var(--bad-soft); color: var(--fg); border-bottom: 2px solid var(--bad); padding: 0 2px; border-radius: 3px; }
+mark.bad::after { content: attr(data-n); font-size: 0.62rem; font-weight: 700; color: var(--surface); background: var(--bad); border-radius: 999px; padding: 0 5px; margin-left: 3px; vertical-align: super; }
+.verdict ol { margin: 0; padding-left: 1.4em; gap: 8px; }
+.verdict li::marker { color: var(--bad); font-weight: 700; }
+.verdict li b { display: block; font-size: 0.9rem; }
+.verdict li span { font-size: 0.8rem; color: var(--fg-2); }
+
+.readme { background: var(--sunk); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; max-width: 76ch; }
+.readme p { font-size: 0.92rem; line-height: 1.75; }
+.readme ul { font-size: 0.88rem; line-height: 1.65; color: var(--fg-2); }
+.readme ul strong { color: var(--fg); }
+.principle { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.principle > div { border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; border: 1px solid var(--line); }
+.principle > div:first-child { background: var(--sunk); }
+.principle > div:last-child { background: var(--accent-soft); border-color: var(--accent); }
+.principle > div:last-child .cap { color: var(--accent); }
+.principle b { font-family: var(--font-display); font-size: 1rem; }
+.principle p { font-size: 0.86rem; color: var(--fg-2); line-height: 1.6; }
+.doc-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.8rem; color: var(--fg-2); }
+.fact { border-bottom: 2px dotted var(--accent); color: var(--fg); font-weight: 500; cursor: help; }
+.doc { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(18px, 4vw, 32px); display: flex; flex-direction: column; gap: 18px; max-width: 820px; box-shadow: 0 1px 2px rgba(15, 23, 34, 0.05), 0 18px 40px -24px rgba(15, 23, 34, 0.25); }
+.doc > p, .doc-sec p { font-size: 0.95rem; line-height: 1.85; }
+.doc-head { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; border-bottom: 2px solid var(--fg); }
+.doc-kicker { font-size: 0.74rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; }
+.doc-head > b { font-family: var(--font-display); font-size: 1.5rem; }
+.doc-sub { font-size: 0.82rem; color: var(--fg-2); }
+.doc-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.doc-box { background: var(--sunk); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.doc-h { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; }
+.doc-box dl { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.doc-box dl > div { display: flex; justify-content: space-between; gap: 10px; font-size: 0.86rem; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.doc-box dl > div:last-child { border-bottom: none; padding-bottom: 0; }
+.doc-box dt { color: var(--fg-2); }
+.doc-box dd { margin: 0; text-align: right; font-weight: 600; }
+.doc-box dd small { display: block; font-weight: 400; font-size: 0.72rem; color: var(--fg-2); }
+.be { display: flex; align-items: baseline; gap: 6px; }
+.be b { font-family: var(--font-display); font-size: 2rem; color: var(--accent); line-height: 1.1; }
+.be-f { font-size: 0.76rem; color: var(--fg-2); line-height: 1.55; }
+.sens { display: flex; flex-direction: column; gap: 5px; }
+.sens > div { display: grid; grid-template-columns: 38px minmax(0, 1fr) 36px; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--fg-2); }
+.sens i { display: block; height: 8px; border-radius: 4px; background: var(--dot-off); }
+.sens .cur i { background: var(--accent); }
+.sens .cur { color: var(--fg); font-weight: 700; }
+.sens em { font-style: normal; text-align: right; }
+.doc-sec { display: flex; flex-direction: column; gap: 6px; }
+.qs { margin: 0; gap: 6px; font-size: 0.93rem; }
+
+/* 규칙 3열: 열마다 규칙 목록 → 작동한 순간, 세 열 높이와 구분선 위치를 맞춤 */
+.rule-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.rcol { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; box-shadow: 0 1px 2px rgba(15, 23, 34, 0.05); }
+.rcol-k { font-size: 0.74rem; font-weight: 700; color: var(--fg-2); letter-spacing: 0.02em; }
+.rcol ul { list-style: none; padding: 0; gap: 7px; font-size: 0.86rem; line-height: 1.55; }
+.rcol li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 6px; }
+.rcol li::before { content: "✓"; color: var(--accent); font-weight: 700; }
+.rmoment { margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 4px; }
+.rmoment .when { font-size: 0.72rem; font-weight: 700; color: var(--accent); }
+.rmoment b { font-family: var(--font-display); font-size: 0.95rem; line-height: 1.4; }
+.rmoment p { font-size: 0.84rem; color: var(--fg-2); line-height: 1.6; }
+
+/* 제안서 미리보기: 지역 숫자 3칸, ROI는 왼쪽 결과·오른쪽 민감도 */
+.doc-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.doc-stats > div { padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.doc-stats > div + div { border-left: 1px solid var(--line); }
+.doc-stats > div > span { font-size: 0.76rem; color: var(--fg-2); }
+.doc-stats b { font-family: var(--font-display); font-size: 1.25rem; }
+.doc-roi { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 20px; background: var(--sunk); border-radius: 12px; padding: 16px 18px; align-items: center; }
+.roi-main, .roi-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+/* 한계: 말할 수 있는 것 / 없는 것 → 한계 카드(문제·확인·다음) → 이어 갈 순서 */
+.claims { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.claims > div { border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; border: 1px solid var(--line); }
+.claims .can { background: var(--accent-soft); border-color: var(--accent); }
+.claims .can .cap { color: var(--accent); }
+.claims .cannot { background: var(--sunk); }
+.claims p { font-size: 0.92rem; line-height: 1.7; }
+.lims { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.lim { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lim h3 { font-size: 0.98rem; line-height: 1.4; }
+.lim > p { font-size: 0.86rem; line-height: 1.6; color: var(--fg-2); }
+.lim-k { width: max-content; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; padding: 1px 8px; border-radius: 999px; }
+.lim-k.k-a { color: var(--surface); background: var(--fg); }
+.lim-k.k-b { color: var(--accent); background: var(--accent-soft); }
+.lim-k.k-c { color: var(--fg-2); background: var(--sunk); }
+.lim dl { margin: auto 0 0; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.lim dl > div { display: flex; flex-direction: column; gap: 1px; }
+.lim dt { font-size: 0.7rem; font-weight: 700; color: var(--fg-2); letter-spacing: 0.02em; }
+.lim dd { margin: 0; font-size: 0.84rem; line-height: 1.55; }
+.lim dl > div:last-child dt { color: var(--accent); }
+.road { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.road li { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.road li + li::before { content: "→"; position: absolute; left: -11px; top: 50%; transform: translate(-50%, -50%); color: var(--fg-2); font-weight: 700; }
+.road .n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.76rem; font-weight: 700; background: var(--fg); color: var(--surface); }
+.road b { font-family: var(--font-display); font-size: 0.92rem; line-height: 1.4; }
+.road li > span:last-child { font-size: 0.78rem; color: var(--fg-2); line-height: 1.5; }
+
+/* 데이터 흐름: 출처(공공데이터 3 + 공개 목록 1) → 연결 → 분석 대상 */
+.flowmap { display: grid; grid-template-columns: minmax(0, 1.35fr) auto minmax(0, 0.9fr); gap: 0; align-items: center; }
+.sources { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.src { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.src.dim { opacity: 0.7; }
+.src.label { border-style: dashed; }
+.src-k { width: max-content; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); background: var(--accent-soft); padding: 1px 8px; border-radius: 999px; }
+.src.label .src-k { color: var(--fg-2); background: var(--sunk); }
+.src b { font-family: var(--font-display); font-size: 0.92rem; }
+.src-d { font-size: 0.76rem; color: var(--fg-2); }
+.vars { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.vars span { font-size: 0.72rem; font-weight: 600; color: var(--surface); background: var(--accent); padding: 1px 8px; border-radius: 6px; }
+.vars span.off { color: var(--fg-2); background: var(--sunk); }
+.vars span.ans { color: var(--surface); background: var(--fg); }
+.join { display: flex; align-items: center; gap: 8px; padding-inline: 10px; }
+.join .arrow { font-weight: 700; color: var(--fg-2); font-size: 1.1rem; }
+.join-box { background: var(--sunk); border-radius: 12px; padding: 12px 14px; width: 210px; display: flex; flex-direction: column; gap: 6px; }
+.join-box b { font-family: var(--font-display); font-size: 0.9rem; }
+.join-box ul { padding-left: 1.1em; gap: 4px; font-size: 0.78rem; line-height: 1.5; color: var(--fg-2); }
+.funnel { display: flex; flex-direction: column; gap: 6px; }
+.funnel > div { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; gap: 1px; background: var(--surface); }
+.funnel span { font-size: 0.76rem; color: var(--fg-2); }
+.funnel b { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.2; }
+.funnel small { font-size: 0.74rem; color: var(--fg-2); }
+.funnel .minus b { font-size: 1rem; color: var(--fg-2); }
+.funnel .final { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.funnel .final b { color: var(--accent); font-size: 1.7rem; }
+.funnel .final strong { color: var(--fg); }
+
+/* 교차검증 미니 그림 */
+.cv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.cv-rows { display: flex; flex-direction: column; gap: 4px; }
+.cv-rows > div { display: flex; gap: 4px; }
+.cv-rows i { width: 26px; height: 14px; border-radius: 4px; background: var(--dot-off); }
+.cv-rows i.s { background: var(--accent); }
+.cv-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cv-text b { font-family: var(--font-display); font-size: 0.98rem; }
+.cv-text > span { font-size: 0.86rem; color: var(--fg-2); line-height: 1.65; }
+
+.stepno { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--fg); color: var(--surface); font-size: 0.74rem; font-weight: 700; margin-right: 8px; vertical-align: 2px; }
+.chart-box .plain { fill: var(--fg-2); font-family: var(--font-body); font-size: 11px; }
+/* 접기 상자: 기본은 접혀 있고, 궁금한 사람만 펼쳐 봄 */
+details.more { max-width: none; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+details.more > summary { font-family: var(--font-display); font-weight: 600; font-size: 0.92rem; color: var(--fg-2); cursor: pointer; }
+details.more[open] > summary { color: var(--fg); }
+details.more > summary:hover { color: var(--fg); }
+.more-body { margin-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+.flowline { font-size: 0.86rem; color: var(--fg-2); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.flowline .phase { margin: 0 4px 0 0; }
+.flowline .arr { color: var(--fg-2); font-weight: 700; }
+
+/* 표: 본문과 같은 글꼴(한글·숫자 모두 Noto Sans KR), 세로선 없이 가로선만 */
+.table-box { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 1px 2px rgba(15, 23, 34, 0.04); }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-family: var(--font-body); font-weight: 400; font-size: 0.92rem; line-height: 1.6; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+thead th { font-weight: 600; font-size: 0.78rem; color: var(--fg-2); white-space: nowrap; padding-block: 11px; background: var(--sunk); }
+tbody td:first-child { font-weight: 500; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr { transition: background-color 0.15s; }
+tbody tr:hover td { background: var(--sunk); }
+td.r, th.r { text-align: right; white-space: nowrap; }
+table .num, table strong { font-family: inherit; }
+table strong { font-weight: 600; }
+tr.final td { background: var(--accent-soft); }
+tr.final:hover td { background: var(--accent-soft); }
+tr.final td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+tr.sub td { color: var(--fg-2); }
+caption { caption-side: bottom; text-align: left; padding: 12px 18px; font-size: 0.8rem; color: var(--fg-2); border-top: 1px solid var(--line); line-height: 1.65; font-family: var(--font-body); }
+.reg td:first-child { white-space: nowrap; }
+.reg .unit { display: block; font-size: 0.74rem; font-weight: 400; color: var(--fg-2); }
+@media (prefers-reduced-motion: reduce) { tbody tr { transition: none; } }
+.tag { display: inline-block; font-size: 0.74rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.tag.adopt { color: var(--accent); }
+.tag.reject { color: var(--fg-2); }
+
+/* AI 에이전트와 함께한 방식 */
+.split { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.split-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--line); }
+.split-row:first-child { border-top: none; }
+.split-row > div { padding: 14px 16px; min-width: 0; font-size: 0.9rem; line-height: 1.6; }
+.split-row.head > div { padding-block: 10px; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.02em; background: var(--sunk); }
+.split-row .step { display: flex; flex-direction: column; gap: 2px; }
+.split-row .step b { font-family: var(--font-display); font-size: 0.95rem; }
+.split-row .step span { font-family: var(--font-num); font-size: 0.72rem; color: var(--fg-2); }
+.split-row .ai { border-left: 3px solid var(--accent); }
+.split-row .me { border-left: 3px solid var(--human); background: var(--human-soft); }
+.split-row.head .ai { color: var(--accent); }
+.split-row.head .me { color: var(--human); }
+.split-row ul { padding-left: 1.1em; gap: 4px; }
+
+.guard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 0.86em; background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+.rules { background: var(--sunk); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rules .file { font-family: var(--font-num); font-size: 0.76rem; color: var(--fg-2); }
+.rules ul { list-style: none; padding: 0; gap: 7px; font-size: 0.88rem; line-height: 1.55; }
+.rules li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; }
+.rules li::before { content: "✓"; color: var(--accent); font-weight: 700; }
+.moments { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.moment { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.moment .when { font-family: var(--font-num); font-size: 0.74rem; font-weight: 600; color: var(--accent); }
+.moment p { font-size: 0.88rem; line-height: 1.6; color: var(--fg-2); }
+.moment b { font-family: var(--font-display); font-size: 0.95rem; }
+
+/* 변수별 그래프 */
+.facets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.facet { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.facet-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.facet-head b { font-family: var(--font-display); font-size: 0.98rem; }
+.facet-head .r { font-family: var(--font-body); font-size: 0.78rem; color: var(--fg-2); }
+.facet-sub { font-size: 0.8rem; color: var(--fg-2); line-height: 1.5; }
+.facet svg { display: block; width: 100%; height: auto; margin-top: 6px; }
+.facet text { font-family: var(--font-body); fill: var(--fg-2); font-size: 11px; }
+.facet .val { font-family: var(--font-body); fill: var(--fg); font-size: 12px; font-weight: 600; }
+.facet .nn { font-family: var(--font-body); font-size: 10px; }
+.facet .grid { stroke: var(--line); stroke-width: 1; }
+.facet .base { stroke: var(--fg-2); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.facet .bar { fill: var(--accent); }
+.facet .bar.thin { fill: var(--accent); opacity: 0.45; }
+
+/* 오즈비 도표 */
+.chart-box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 12px 10px; overflow-x: auto; }
+.chart-box svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.chart-box text { font-family: var(--font-body); fill: var(--fg); }
+.chart-box .t2 { fill: var(--fg-2); font-size: 11px; }
+.chart-box .nm { font-family: var(--font-body); font-size: 12px; }
+.chart-box .grid { stroke: var(--line); stroke-width: 1; }
+.chart-box .ref { stroke: var(--fg-2); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.chart-box .ci-up { stroke: var(--accent); stroke-width: 2; }
+.chart-box .pt-up { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.chart-box .ci-dn { stroke: var(--fg-2); stroke-width: 2; }
+.chart-box .pt-dn { fill: var(--fg-2); stroke: var(--surface); stroke-width: 2; }
+
+/* 실험 타임라인: 사이클마다 에이전트 실행(파랑) → 멈춤 → 내 판단(호박색) */
+.tl { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0; }
+.tl-item { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; position: relative; padding-bottom: 22px; }
+.tl-item::before { content: ""; position: absolute; left: 21px; top: 40px; bottom: 0; width: 2px; background: var(--line); }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-item:last-child::before { display: none; }
+.tl-mark { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-num); font-weight: 600; font-size: 0.9rem; background: var(--surface); border: 2px solid var(--line); color: var(--fg-2); position: relative; z-index: 1; }
+.tl-item.final .tl-mark { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.tl-item.question .tl-mark { border-color: var(--human); color: var(--human); background: var(--human-soft); font-size: 1.1rem; }
+.tl-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; min-width: 0; }
+.tl-item.final .tl-card { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.tl-item.question .tl-card { background: var(--human-soft); border-color: var(--human); }
+.tl-head { padding: 14px 16px 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px 14px; flex-wrap: wrap; }
+.tl-head .h { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 280px; }
+.tl-head .k { font-size: 0.74rem; font-weight: 700; color: var(--fg-2); letter-spacing: 0.02em; }
+.tl-item.question .tl-head .k { color: var(--human); }
+.tl-head h3 { font-size: 1rem; line-height: 1.45; }
+.lift { font-family: var(--font-num); font-size: 1.25rem; font-weight: 600; white-space: nowrap; line-height: 1.2; text-align: right; }
+.lift small { display: block; font-family: var(--font-body); font-size: 0.7rem; font-weight: 500; color: var(--fg-2); }
+.tl-item.final .lift { color: var(--accent); }
+.tl-block { padding: 10px 16px 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; font-size: 0.88rem; line-height: 1.6; }
+.tl-block .who { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; }
+.tl-block.ai { box-shadow: inset 3px 0 0 var(--accent); }
+.tl-block.ai .who { color: var(--accent); }
+.tl-block.me { box-shadow: inset 3px 0 0 var(--human); background: var(--human-soft); }
+.tl-block.me .who { color: var(--human); }
+.tl-item.question .tl-block { background: transparent; }
+.tl-block ul { padding-left: 1.1em; gap: 3px; }
+.tl-pause { padding: 5px 16px; border-top: 1px dashed var(--line); font-size: 0.74rem; color: var(--fg-2); display: flex; align-items: center; gap: 6px; background: var(--sunk); }
+.tl-pause::before { content: "Ⅱ"; font-weight: 700; font-size: 0.7rem; }
+.tl .tag { margin-right: 4px; }
+.tag.me { color: var(--human); }
+
+/* 제안서 에이전트 흐름 */
+.flow { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; position: relative; }
+.flow li { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.flow li.check { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.flow .n { font-family: var(--font-num); font-size: 0.78rem; color: var(--accent); font-weight: 600; }
+.flow .who { font-size: 0.72rem; font-weight: 700; color: var(--fg-2); }
+.flow b { font-family: var(--font-display); }
+.flow span.d { font-size: 0.84rem; color: var(--fg-2); line-height: 1.55; }
+.loop { font-size: 0.82rem; color: var(--fg-2); display: flex; align-items: center; gap: 8px; }
+.loop svg { flex: none; }
+.loop path { stroke: var(--accent); fill: none; stroke-width: 1.6; }
+
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; max-width: 76ch; }
+details summary { cursor: pointer; font-weight: 700; font-family: var(--font-display); }
+details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+details .sample { margin-top: 14px; display: flex; flex-direction: column; gap: 12px; font-size: 0.92rem; }
+
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.two > div { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: 0.82rem; color: var(--fg-2); display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 760px) {
+  .hero-card { grid-template-columns: 1fr; padding: 16px; }
+  .hero-stats { border-left: none; padding-left: 0; border-top: 1px solid var(--line); padding-top: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .stat .big { font-size: 1.35rem; }
+  .guard, .two { grid-template-columns: 1fr; }
+  .findings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .usepath { grid-template-columns: 1fr; }
+  .flowmap { grid-template-columns: 1fr; gap: 8px; }
+  .join { flex-direction: column; padding: 0; }
+  .join .arrow { transform: rotate(90deg); }
+  .join-box { width: 100%; }
+  .claims { grid-template-columns: 1fr; }
+  .lims { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .road { grid-template-columns: 1fr; }
+  .road li + li::before { content: "↓"; left: 50%; top: -11px; }
+  .usepath li + li::before { content: "↓"; left: 50%; top: -12px; }
+  .checkdemo, .doc-grid, .principle, .rule-cols, .doc-roi { grid-template-columns: 1fr; }
+  .lead { grid-template-columns: 44px minmax(0, 1fr); }
+  .prod { grid-column: 2; text-align: left; flex-direction: row; gap: 4px; align-items: baseline; }
+  .top30 { grid-template-columns: 1fr; }
+  .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .split-row { grid-template-columns: 1fr; }
+  .split-row.head { display: none; }
+  .split-row .step { background: var(--sunk); flex-direction: row; gap: 10px; align-items: baseline; }
+  .split-row .ai::before { content: "AI 에이전트가 한 일"; display: block; font-size: 0.72rem; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .split-row .me::before { content: "내가 정한 것"; display: block; font-size: 0.72rem; font-weight: 700; color: var(--human); margin-bottom: 4px; }
+  .waffle { gap: 6px; }
+  .band { padding: 4px; }
+  .dots { gap: 1px; }
+  .band-label b { font-size: 0.86rem; }
+  .wrap { gap: 60px; }
+}
+@media (max-width: 520px) {
+  .cv { grid-template-columns: 1fr; }
+  .lims { grid-template-columns: 1fr; }
+  .doc-stats { grid-template-columns: 1fr; }
+  .doc-stats > div + div { border-left: none; border-top: 1px solid var(--line); }
+  .findings { grid-template-columns: 1fr; }
+  .f-t { min-height: 0; }
+  .facets { grid-template-columns: 1fr; }
+  .facet svg { max-width: 420px; }
+}
+@media (max-width: 420px) {
+  .hero-stats { grid-template-columns: 1fr; }
+  .stat .big { font-size: 1.6rem; }
+}
+</style>
+
+<nav class="toc" aria-label="목차"><div class="toc-inner">
+  <a href="#findings">핵심 발견</a>
+  <a href="#leads">먼저 갈 병원</a>
+  <a href="#agent" class="ai">AI 에이전트 활용</a>
+  <a href="#cycles">실험 타임라인</a>
+  <a href="#data">데이터·검증</a>
+  <a href="#variables">회귀분석</a>
+  <a href="#proposal">제안서 에이전트</a>
+  <a href="#limits">한계</a>
+</div></nav>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">개인 케이스 스터디 · 공개 데이터 기반 · 서울 안과 의원 · 2026년 11월</span>
+  <h1>어느 안과에 먼저 갈까</h1>
+  <p class="question">서울 안과 의원은 475곳, 영업 시간은 한정되어 있습니다. 어디부터 찾아가야 할까요?</p>
+  <p class="lede">시력교정 수술을 하고, 개원한 지 오래되지 않았고, 안과가 밀집한 상권에 있고, 전문의가 많은 의원이 플랫폼에 입점합니다. 이 특성으로 만든 점수를 검증해 보니, 점수 상위 20%에 이미 입점한 병원 10곳 중 7곳이 몰려 있었습니다. 그래서 같은 점수로 <strong>아직 입점하지 않은 391곳을 줄 세워, 입점 병원과 가장 닮은 30곳부터</strong> 제안서를 들고 찾아갑니다.</p>
+  <div class="byline">
+    <span class="chip ai"><i></i>AI 에이전트(Claude Code)가 수집·코드·실험 실행</span>
+    <span class="chip me"><i></i>가설과 채택 여부는 내가 판단</span>
+  </div>
+
+  <div class="hero-card">
+    <div class="hero-main">
+      <span class="waffle-title"><span class="phase">검증</span>475곳을 점수 순으로 5구간에 나누면, 이미 입점한 84곳은 어디에 있을까</span>
+      <div class="waffle" id="waffle" role="img" aria-label="점수 구간별 입점 병원 수: 상위 20% 95곳 중 59곳, 20~40% 17곳, 40~60% 5곳, 60~80% 1곳, 하위 20% 2곳"></div>
+      <div class="legend">
+        <span><i style="background: var(--accent)"></i>입점 병원 (84곳)</span>
+        <span><i style="background: var(--dot-off)"></i>미입점 병원</span>
+        <span>점 1개 = 의원 1곳 · 교차검증 점수 기준</span>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="phase">검증</span><span class="big a">3.5배</span><span class="label">무작위 대비</span><span class="sub">상위 20%의 입점 비율 <span class="num">61.9%</span>, 무작위 <span class="num">17.7%</span></span></div>
+      <div class="stat"><span class="phase">검증</span><span class="big a">70%</span><span class="label">입점 병원 포착</span><span class="sub">입점 병원 <span class="num">84</span>곳 중 <span class="num">59</span>곳이 상위 20%에</span></div>
+      <div class="stat"><span class="phase use">활용</span><span class="big">391→30</span><span class="label">우선 방문 목록</span><span class="sub">미입점 병원만 줄 세워 상위 <span class="num">30</span>곳부터</span></div>
+    </div>
+  </div>
+  <p class="flowline"><span class="phase">검증</span>이미 입점한 84곳을 맞히는지 확인 <span class="arr">→</span> <span class="phase use">활용</span>미입점 391곳에 같은 점수 <span class="arr">→</span> Top 30부터 방문</p>
+</header>
+
+<section id="findings">
+  <div class="sec-head"><span class="stage">핵심 발견</span><h2>입점한 병원의 공통점</h2></div>
+  <div class="findings">
+    <div class="finding">
+      <span class="f-k">01 · 수술</span>
+      <b class="f-t">라식·라섹을 하는 의원</b>
+      <div class="pair"><span>한다 <small>109곳</small></span><div class="track"><i style="width:56%"></i></div><em>56%</em></div>
+      <div class="pair off"><span>안 한다 <small>366곳</small></span><div class="track"><i style="width:6.3%"></i></div><em>6%</em></div>
+      <span class="f-x">입점 비율 약 <strong>9배</strong></span>
+    </div>
+    <div class="finding">
+      <span class="f-k">02 · 상권</span>
+      <b class="f-t">반경 1km에 안과가 많은 의원</b>
+      <div class="pair"><span>11곳 이상 <small>51곳</small></span><div class="track"><i style="width:74.5%"></i></div><em>75%</em></div>
+      <div class="pair off"><span>5곳 이하 <small>333곳</small></span><div class="track"><i style="width:8.1%"></i></div><em>8%</em></div>
+      <span class="f-x">입점 비율 약 <strong>9배</strong></span>
+    </div>
+    <div class="finding">
+      <span class="f-k">03 · 규모</span>
+      <b class="f-t">안과 전문의가 많은 의원</b>
+      <div class="pair"><span>4명 이상 <small>42곳</small></span><div class="track"><i style="width:64.3%"></i></div><em>64%</em></div>
+      <div class="pair off"><span>1명 <small>342곳</small></span><div class="track"><i style="width:7%"></i></div><em>7%</em></div>
+      <span class="f-x">입점 비율 약 <strong>9배</strong></span>
+    </div>
+    <div class="finding">
+      <span class="f-k">04 · 개원 시기</span>
+      <b class="f-t">개원한 지 오래되지 않은 의원</b>
+      <div class="pair"><span>10년 이하 <small>162곳</small></span><div class="track"><i style="width:32.1%"></i></div><em>32%</em></div>
+      <div class="pair off"><span>20년 초과 <small>195곳</small></span><div class="track"><i style="width:4.6%"></i></div><em>5%</em></div>
+      <span class="f-x">입점 비율 약 <strong>7배</strong></span>
+    </div>
+  </div>
+  <p class="note">막대 = 그 조건의 의원 중 실제 입점 비율 (전체 평균 17.7%). 변수를 하나씩 본 값이라 서로 겹치는 부분이 있고, 다른 조건을 같게 맞춘 효과는 아래 회귀분석에 있습니다.</p>
+</section>
+
+<section id="leads">
+  <div class="sec-head"><span class="stage">결과</span><h2>먼저 찾아갈 미입점 병원</h2></div>
+  <p>전체 475곳으로 다시 학습한 모델의 점수로 아직 입점하지 않은 391곳을 정렬했습니다. 상위 5곳, Top 30 요약, Top 30 전체 목록입니다. 병원명은 익명이고, 칩은 점수를 가장 많이 올린 이유 두 가지입니다. 이 목록은 영업 담당자용이라 선정 근거(개원 연차·전문의 수·주변 안과 수)를 보여 주되, 병원을 특정할 수 없도록 구간으로 표시했습니다.</p>
+  <div class="leads">
+    <article class="lead first">
+      <span class="rank">1</span>
+      <div class="lead-body">
+        <b>강북구 A안과</b>
+        <span class="meta">개원 5년 이하 · 전문의 4명 이상 · 반경 1km 안과 5곳 이하</span>
+        <div class="why"><span>안과 전문의 4명 이상</span><span>라식·라섹 시행</span></div>
+      </div>
+      <span class="prod">시술 할인 이벤트 광고<small>(가정)</small></span>
+    </article>
+    <article class="lead">
+      <span class="rank">2</span>
+      <div class="lead-body">
+        <b>강남구 A안과</b>
+        <span class="meta">개원 20년 초과 · 전문의 4명 이상 · 반경 1km 안과 6~10곳</span>
+        <div class="why"><span>안과 전문의 4명 이상</span><span>라식·라섹 시행</span></div>
+      </div>
+      <span class="prod">시술 할인 이벤트 광고<small>(가정)</small></span>
+    </article>
+    <article class="lead">
+      <span class="rank">3</span>
+      <div class="lead-body">
+        <b>강남구 B안과</b>
+        <span class="meta">개원 20년 초과 · 전문의 4명 이상 · 반경 1km 안과 11곳 이상</span>
+        <div class="why"><span>반경 1km 안과 11곳 이상</span><span>라식·라섹 시행</span></div>
+      </div>
+      <span class="prod">시술 할인 이벤트 광고<small>(가정)</small></span>
+    </article>
+    <article class="lead">
+      <span class="rank">4</span>
+      <div class="lead-body">
+        <b>강남구 C안과</b>
+        <span class="meta">개원 11~20년 · 전문의 1명 · 반경 1km 안과 11곳 이상</span>
+        <div class="why"><span>반경 1km 안과 11곳 이상</span><span>라식·라섹 시행</span></div>
+      </div>
+      <span class="prod">시술 할인 이벤트 광고<small>(가정)</small></span>
+    </article>
+    <article class="lead">
+      <span class="rank">5</span>
+      <div class="lead-body">
+        <b>강남구 D안과</b>
+        <span class="meta">개원 11~20년 · 전문의 2~3명 · 반경 1km 안과 11곳 이상</span>
+        <div class="why"><span>반경 1km 안과 11곳 이상</span><span>라식·라섹 시행</span></div>
+      </div>
+      <span class="prod">시술 할인 이벤트 광고<small>(가정)</small></span>
+    </article>
+  </div>
+  <div class="top30">
+    <div><b>24곳</b><span>Top 30 중 라식·라섹 시행</span></div>
+    <div><b>11곳</b><span>Top 30 중 강남구</span></div>
+    <div><b>24 · 4 · 2</b><span>추천 상품: 시술 할인 이벤트 광고 · 상담·견적 연결 · 검진·진료 할인 상품 (가정)</span></div>
+  </div>
+  <details class="all30">
+    <summary>Top 30 전체 보기 <span>순위·선정 근거·추천 상품, 추천 상품으로 거르기</span></summary>
+    <div class="all30-body">
+  <div class="filters" role="group" aria-label="추천 상품으로 거르기">
+    <button type="button" id="f-all" data-f="" aria-pressed="true">전체 <span>30</span></button>
+    <button type="button" id="f-sale" data-f="시술 할인 이벤트 광고" aria-pressed="false">시술 할인 이벤트 광고 <span>24</span></button>
+    <button type="button" id="f-quote" data-f="상담·견적 연결" aria-pressed="false">상담·견적 연결 <span>4</span></button>
+    <button type="button" id="f-mall" data-f="검진·진료 할인 상품" aria-pressed="false">검진·진료 할인 상품 <span>2</span></button>
+  </div>
+  <div class="table-box"><table class="t30">
+    <thead><tr><th class="r">순위</th><th>병원</th><th class="r">개원</th><th class="r">전문의</th><th class="r">1km 안과</th><th>라식·라섹</th><th>점수가 높은 이유</th><th>추천 상품 (가정)</th></tr></thead>
+    <tbody id="t30"></tbody>
+  </table></div>
+    </div>
+  </details>
+  <p class="note">추천 상품은 규칙으로 정했습니다 (가정): 라식·라섹 시행 → 시술 할인 이벤트 광고, 다초점 백내장 렌즈만 신고 → 상담·견적 연결, 그 외 → 검진·진료 할인 상품.</p>
+</section>
+
+<section id="agent" class="wide-band">
+  <div class="sec-head"><span class="stage">AI 에이전트 활용</span><h2>AI 에이전트와 일한 방식</h2></div>
+  <p>분석 전 과정을 AI 코딩 에이전트 Claude Code와 함께 진행했습니다. 에이전트가 데이터 수집, 코드 작성, 모델 실행, 결과 정리를 맡았고, 저는 무엇을 검증할지와 결과를 받아들일지를 정했습니다. 에이전트는 사이클이 끝날 때마다 멈춰 결과를 보여 주고 제 판단을 기다리도록 설정했습니다.</p>
+
+  <div class="split" role="table" aria-label="단계별 역할 분담">
+    <div class="split-row head" role="row"><div role="columnheader">단계</div><div class="ai" role="columnheader">AI 에이전트가 한 일</div><div class="me" role="columnheader">내가 정한 것</div></div>
+    <div class="split-row" role="row">
+      <div class="step" role="cell"><b>수집·매칭</b><span>STEP 0~1</span></div>
+      <div class="ai" role="cell"><ul>
+        <li>심평원 파일마다 항목과 빈칸을 먼저 살펴 쓸 수 있는 항목 정리</li>
+        <li>기본정보·진료과목·시설·장비 파일을 병원 코드로 이어 서울 안과 의원 475곳 목록 작성</li>
+        <li>공개된 플랫폼 목록과 이름·지역으로 매칭하고, 애매한 11곳을 따로 추림</li>
+      </ul></div>
+      <div class="me" role="cell"><ul>
+        <li>공공데이터포털에서 심평원 자료를 내려받고, 어떤 파일·항목을 쓸지 결정</li>
+        <li>'목록에 있음'이 아닌 '제휴 표시'를 입점 기준으로 결정</li>
+        <li>애매한 11곳은 도로명 주소로 직접 확인</li>
+      </ul></div>
+    </div>
+    <div class="split-row" role="row">
+      <div class="step" role="cell"><b>모델·실험</b><span>STEP 2</span></div>
+      <div class="ai" role="cell"><ul>
+        <li>사이클마다 모델 실행, 교차검증, 오즈비·VIF 계산</li>
+        <li>모델이 틀린 병원을 모아 공통점 분석</li>
+        <li>심평원 비급여 화면 수집용 지시문 작성 (브라우저 에이전트 Aside로 수집)</li>
+      </ul></div>
+      <div class="me" role="cell"><ul>
+        <li>대형 안과병원 제외 채택, 홈페이지 변수 기각</li>
+        <li>"수술실은 왜 효과가 없나" 추가 조사 요청 → 데이터가 가설을 측정하지 못한 것을 발견</li>
+        <li>라식·라섹 신고 변수 최종 채택</li>
+      </ul></div>
+    </div>
+    <div class="split-row" role="row">
+      <div class="step" role="cell"><b>제안서</b><span>STEP 3</span></div>
+      <div class="ai" role="cell"><ul>
+        <li>제안서 에이전트(<code>/proposal</code> 스킬) 설계와 구현</li>
+        <li>숫자는 코드로 계산, 문장만 AI가 쓰고 자동 검사</li>
+      </ul></div>
+      <div class="me" role="cell"><ul>
+        <li>유료 API 대신 Claude Code 안에서 돌아가게 결정</li>
+        <li>환자 1명당 수수료 구조는 제안하지 않기로 결정</li>
+      </ul></div>
+    </div>
+    <div class="split-row" role="row">
+      <div class="step" role="cell"><b>정리</b><span>STEP 4</span></div>
+      <div class="ai" role="cell"><ul>
+        <li>결과 요약, 그래프, 이 페이지 작성</li>
+        <li>공개 기록 전체에서 실명 검사·익명화</li>
+      </ul></div>
+      <div class="me" role="cell"><ul>
+        <li>성과를 '제안서 작성 시간'이 아닌 '대상 고르는 시간'으로 표현</li>
+        <li>표현·그래프 방식 검토</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <details class="more">
+    <summary>에이전트에게 준 규칙과 실제로 있었던 일</summary>
+    <div class="more-body">
+  <h3>에이전트에게 준 규칙</h3>
+  <p class="note">규칙은 프로젝트 규칙 파일(CLAUDE.md)에 적어 두어, 에이전트가 작업할 때마다 읽고 따르게 했습니다.</p>
+  <div class="rule-cols">
+    <div class="rcol">
+      <span class="rcol-k">규칙 · 데이터</span>
+      <ul><li>데이터를 받기 전에 이용약관과 robots.txt를 확인하고, 허용된 범위 안에서만 사용</li><li>공공데이터는 공식 경로(공공데이터포털·심평원 공개 화면)에서 받고, 원본은 고치지 않고 그대로 보관</li><li>어떤 파일의 어떤 항목을 왜 썼는지 README에 기록</li></ul>
+      <div class="rmoment"><span class="when">실제로 있었던 일 · STEP 1</span><b>쓰지 않은 데이터도 이유를 남겼습니다</b><p>심평원 교통정보는 서울 안과의 19%만 정보가 있고 거리 표기도 제각각이라 이번 분석에서는 빼고, 그 이유를 README에 적었습니다. 나중에 '역 근처' 가설을 볼 때 바로 이어 갈 수 있습니다.</p></div>
+    </div>
+    <div class="rcol">
+      <span class="rcol-k">규칙 · 작업 방식</span>
+      <ul><li>실행 전에 계획을 먼저 보여 주고 확인받기</li><li>사이클마다 멈춰서 결과를 보여 주고 판단 기다리기</li><li>모델 지표는 교차검증 결과로만, 정확도는 쓰지 않기</li></ul>
+      <div class="rmoment"><span class="when">실제로 있었던 일 · STEP 2</span><b>사이클마다 멈추고 판단을 기다렸습니다</b><p>사이클 네 번 모두 에이전트가 가설·실행·결과를 보여 주고 멈췄고, 채택·기각은 제가 정했습니다. 그 기록이 아래 실험 타임라인입니다.</p></div>
+    </div>
+    <div class="rcol">
+      <span class="rcol-k">규칙 · 결과물</span>
+      <ul><li>공개 산출물의 병원명은 익명 (예: 강남구 A안과)</li><li>추정 숫자에는 '(가정)' 표시</li><li>실제 병원에 연락하는 코드는 만들지 않기</li></ul>
+      <div class="rmoment"><span class="when">실제로 있었던 일 · STEP 4</span><b>올리기 전에 과거 기록까지 지웠습니다</b><p>GitHub에 올리기 전, 과거 커밋 6개를 병원명 541개와 대조해 남아 있던 실명과 주소를 모두 익명으로 바꿨습니다.</p></div>
+    </div>
+  </div>
+    </div>
+  </details>
+</section>
+
+<section id="cycles">
+  <div class="sec-head"><span class="stage">Step 2</span><h2>실험 기록</h2></div>
+  <p>사이클마다 에이전트가 가설대로 모델을 돌리고 결과를 보여 준 뒤 멈추면, 제가 채택·기각을 정하고 다음 가설을 냈습니다. 판단 규칙은 미리 정해 두었습니다: 무작위 대비 배수가 오르면 채택, 차이가 작으면 더 단순한 모델.</p>
+  <div class="legend">
+    <span><i style="background: var(--accent)"></i>에이전트가 실행</span>
+    <span><i style="background: var(--human)"></i>내가 판단</span>
+    <span>배수 = 점수 상위 20%의 입점 비율 ÷ 무작위(17.7%), 교차검증 10회 평균</span>
+  </div>
+
+  <ol class="tl">
+    <li class="tl-item">
+      <span class="tl-mark">1</span>
+      <div class="tl-card">
+        <div class="tl-head">
+          <div class="h"><span class="k">사이클 1 · 가설</span><h3>개원 초기이고, 경쟁이 심하고, 규모가 크고, 수술실이 있는 병원이 입점한다</h3></div>
+          <div class="lift">3.42배<small>480곳, 변수 4개</small></div>
+        </div>
+        <div class="tl-block ai"><span class="who">에이전트 실행</span>
+          <ul>
+            <li>개원 연차·반경 1km 안과 수·전문의 수는 가설 방향대로 나옴</li>
+            <li>수술실 보유는 오즈비 0.97 (0.38~2.52)로 효과를 확신하기 어려움. 빼도 3.48배로 차이 없음</li>
+          </ul>
+        </div>
+        <div class="tl-pause">멈춤 · 결과 보고 후 판단 대기</div>
+        <div class="tl-block me"><span class="who">내 판단</span>
+          <p><span class="tag me">수술실 제외</span>차이가 작으면 단순한 모델을 쓴다는 규칙에 따라 뺐습니다. 다만 "수술을 많이 하는 병원이 입점한다"는 생각은 버리지 않고 보류했습니다.</p>
+        </div>
+      </div>
+    </li>
+
+    <li class="tl-item">
+      <span class="tl-mark">2</span>
+      <div class="tl-card">
+        <div class="tl-head">
+          <div class="h"><span class="k">사이클 2 · 가설</span><h3>대형병원은 플랫폼이 필요 없다 / 홈페이지가 있는 병원이 입점한다</h3></div>
+          <div class="lift">3.48 / 3.39배<small>의원 475곳 / +홈페이지</small></div>
+        </div>
+        <div class="tl-block ai"><span class="who">에이전트 실행</span>
+          <ul>
+            <li>모델이 틀린 병원 10곳을 정리: 점수 1위인데 미입점인 곳은 재단 운영 대형 안과병원(전문의가 수십 명)</li>
+            <li>대형병원 5곳을 빼자 시드별 결과 범위가 3.23~3.59에서 3.45~3.51로 좁아짐</li>
+            <li>홈페이지는 오즈비 2.07로 관련은 있지만 모델에 넣으면 배수가 3.48에서 3.39로 떨어짐</li>
+          </ul>
+        </div>
+        <div class="tl-pause">멈춤 · 결과 보고 후 판단 대기</div>
+        <div class="tl-block me"><span class="who">내 판단</span>
+          <p><span class="tag adopt">대형병원 제외 채택</span><span class="tag reject">홈페이지 기각</span>대형병원은 영업 대상의 성격도 달라 분석에서 뺐습니다. 홈페이지는 배수가 오르지 않아 규칙대로 기각했습니다.</p>
+        </div>
+      </div>
+    </li>
+
+    <li class="tl-item question">
+      <span class="tl-mark">?</span>
+      <div class="tl-card">
+        <div class="tl-head">
+          <div class="h"><span class="k">내가 의문을 제기한 지점</span><h3>"수술실은 왜 효과가 없을까?"</h3></div>
+        </div>
+        <div class="tl-block"><span class="who" style="color: var(--accent)">에이전트 추가 조사</span>
+          <p>전문의 3명 이상인 입점 의원 40곳 중 32곳(80%)이 심평원 자료에 '수술실 없음'으로 신고돼 있었습니다. 라식·라섹은 별도 레이저실에서 해서 '수술실 병상'으로 잡히지 않는 것으로 보입니다.</p>
+        </div>
+        <div class="tl-block"><span class="who" style="color: var(--human)">내 판단</span>
+          <p>가설이 틀린 게 아니라 변수가 가설을 측정하지 못한 것으로 보고, 수술을 실제로 하는지 보여 주는 다른 데이터를 찾기로 했습니다.</p>
+        </div>
+      </div>
+    </li>
+
+    <li class="tl-item">
+      <span class="tl-mark">3</span>
+      <div class="tl-card">
+        <div class="tl-head">
+          <div class="h"><span class="k">사이클 3 · 가설</span><h3>수술 주력 병원이 입점한다 (수술 레이저 보유로 측정)</h3></div>
+          <div class="lift">3.54배<small>+수술 레이저</small></div>
+        </div>
+        <div class="tl-block ai"><span class="who">에이전트 실행</span>
+          <ul>
+            <li>심평원 의료장비 자료에서 라식·라섹·스마일용 레이저만 골라 64곳 표시. 일반 레이저는 제외</li>
+            <li>보유 의원 입점 42%, 미보유 14%. 오즈비 2.74 (1.11~6.76)</li>
+          </ul>
+        </div>
+        <div class="tl-pause">멈춤 · 결과 보고 후 판단 대기</div>
+        <div class="tl-block me"><span class="who">내 판단</span>
+          <p><span class="tag reject">보류</span>장비 보유는 "수술을 하는가"를 간접적으로만 보여 줍니다. 더 직접적인 자료를 찾아 다시 보기로 했습니다.</p>
+        </div>
+      </div>
+    </li>
+
+    <li class="tl-item final">
+      <span class="tl-mark">3b</span>
+      <div class="tl-card">
+        <div class="tl-head">
+          <div class="h"><span class="k">사이클 3-b · 가설</span><h3>수술 주력 병원이 입점한다 (라식·라섹 가격 신고로 측정)</h3></div>
+          <div class="lift">3.50배<small>AUC 0.886 → 0.903</small></div>
+        </div>
+        <div class="tl-block ai"><span class="who">에이전트 실행</span>
+          <ul>
+            <li>심평원 API가 의원급을 다루지 않아 공개 화면 자료로 전환하고, 브라우저 에이전트(Aside)용 수집 지시문 작성</li>
+            <li>라식·라섹 가격을 신고한 의원 입점 56%, 미신고 6%. 전문의 1명인 작은 의원끼리도 36% 대 4%</li>
+            <li>다른 세 변수와 함께 넣어도 오즈비 7.16 (3.39~15.10)</li>
+          </ul>
+        </div>
+        <div class="tl-pause">멈춤 · 결과 보고 후 판단 대기</div>
+        <div class="tl-block me"><span class="who">내 판단</span>
+          <p><span class="tag adopt">최종 채택</span>배수만 보면 차이(+0.02)가 작아 규칙상 '차이 없음'입니다. 그래도 효과가 크고 분명하며, 전체 순위 정확도가 올랐고, 영업 현장에서 "시력교정 수술을 하는 병원"이라는 구체적인 근거로 쓸 수 있어 채택했습니다. 사이클 1에서 보류했던 가설이 여기서 확인됐습니다.</p>
+        </div>
+      </div>
+    </li>
+  </ol>
+  <details class="more">
+    <summary>왜 라식·라섹만 남겼나 (다초점 백내장과 함께 본 표)</summary>
+    <div class="more-body">
+  <h3>왜 라식·라섹만 남겼나</h3>
+  <p>심평원 비급여 공개에서 라식·라섹, 다초점 백내장 렌즈, 각막교차결합술을 모두 모았습니다. 노안 교정은 심평원이 다초점 인공수정체와 같은 항목으로 분류해 백내장과 합쳤고, 각막교차결합술은 서울 전체 28건뿐이라 따로 변수로 쓰지 않았습니다.</p>
+  <div class="table-box"><table>
+    <thead><tr><th>라식·라섹 신고</th><th>다초점 백내장 신고</th><th class="r">병원 수</th><th class="r">입점 비율</th></tr></thead>
+    <tbody>
+      <tr><td>아니요</td><td>아니요</td><td class="r num">214곳</td><td class="r num">4%</td></tr>
+      <tr><td>아니요</td><td>예</td><td class="r num">152곳</td><td class="r num">9%</td></tr>
+      <tr><td>예</td><td>아니요</td><td class="r num">8곳</td><td class="r num">13%</td></tr>
+      <tr class="final"><td>예</td><td>예</td><td class="r num">101곳</td><td class="r num">59%</td></tr>
+    </tbody>
+  </table></div>
+  <p>라식·라섹을 하는 의원은 대부분(109곳 중 101곳) 다초점 백내장 렌즈 가격도 신고합니다. 다초점 백내장만 신고한 의원의 입점 비율은 9%로 둘 다 안 하는 의원과 큰 차이가 없어, 입점과 이어지는 것은 시력교정 수술 여부로 판단했습니다. 두 변수를 함께 넣어도 배수가 3.50배에서 3.55배로 거의 같아, 단순한 모델을 택했습니다.</p>
+    </div>
+  </details>
+</section>
+
+<section id="data">
+  <div class="sec-head"><span class="stage">Step 1~2</span><h2>사용한 데이터와 검증 방법</h2></div>
+  <p>병원의 특징은 모두 심평원 공공데이터에서, 정답(입점 여부)만 플랫폼 공개 목록에서 가져왔습니다. 카드 아래쪽은 그 자료에서 만든 모델 변수입니다.</p>
+  <div class="flowmap">
+    <div class="sources">
+      <div class="src"><span class="src-k">공공데이터</span><b>심평원 「전국 병의원 및 약국 현황」</b><span class="src-d">2026-09 · 기본정보·진료과목·시설 파일</span><div class="vars"><span>개원 연차</span><span>안과 전문의 수</span><span>반경 1km 안과 수</span></div></div>
+      <div class="src"><span class="src-k">공공데이터</span><b>심평원 「비급여 진료비용 정보」</b><span class="src-d">2026-11 공개 화면 · 라식·라섹, 다초점 백내장 가격 신고</span><div class="vars"><span>라식·라섹 시행</span></div></div>
+      <div class="src dim"><span class="src-k">공공데이터</span><b>심평원 「의료장비 상세 현황」</b><span class="src-d">2025-12 · 시력교정·백내장 수술 레이저</span><div class="vars"><span class="off">사이클 3 비교용</span></div></div>
+      <div class="src label"><span class="src-k">공개 목록</span><b>병원 플랫폼 서울 안과 목록</b><span class="src-d">2026-11 · 병원명·지역·제휴 여부</span><div class="vars"><span class="ans">정답: 입점 여부</span></div></div>
+    </div>
+    <div class="join">
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="join-box">
+        <b>하나의 병원 목록으로 연결</b>
+        <ul>
+          <li>심평원 파일끼리는 병원 코드(암호화요양기호)로 연결</li>
+          <li>비급여·플랫폼 목록은 병원명과 지역으로 매칭</li>
+          <li>이름이 애매한 11곳은 도로명 주소로 직접 확인</li>
+        </ul>
+      </div>
+      <span class="arrow" aria-hidden="true">→</span>
+    </div>
+    <div class="result">
+      <div class="funnel">
+        <div><span>서울 안과</span><b>480곳</b><small>안과 전문의 1명 이상, 이름에 '안과'</small></div>
+        <div class="minus"><span>대형 안과병원 제외</span><b>−5곳</b><small>재단 운영, 영업 대상 성격이 다름</small></div>
+        <div class="final"><span>분석 대상 의원</span><b>475곳</b><small>입점 <strong>84곳</strong> (17.7%)</small></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">입점 기준: 플랫폼 서울 안과 목록(578곳)에는 제휴하지 않은 병원도 함께 올라와 있어, '제휴 여부'가 '예'인 곳만 입점으로 정했습니다. 파일별로 쓴 항목과 쓰지 않은 이유는 README에 정리했습니다.</p>
+
+  <h3>모델과 검증</h3>
+  <p>변수를 4개로 줄인 로지스틱 회귀로 "어떤 병원이 입점하는가"를 설명할 수 있게 했습니다. 입점 병원이 전체의 일부라 정확도 대신 점수 상위 20% 안의 실제 입점 비율을 핵심 지표로 썼습니다.</p>
+  <details class="more">
+    <summary>교차검증 방법과 지표 표</summary>
+    <div class="more-body">
+  <div class="cv" role="img" aria-label="교차검증: 병원을 5묶음으로 나눠 4묶음으로 학습하고 1묶음으로 채점, 채점 묶음을 바꿔 5번, 이 과정을 시드 10개로 반복">
+    <div class="cv-rows">
+      <div><i class="t"></i><i class="t"></i><i class="t"></i><i class="t"></i><i class="s"></i></div>
+      <div><i class="t"></i><i class="t"></i><i class="t"></i><i class="s"></i><i class="t"></i></div>
+      <div><i class="t"></i><i class="t"></i><i class="s"></i><i class="t"></i><i class="t"></i></div>
+      <div><i class="t"></i><i class="s"></i><i class="t"></i><i class="t"></i><i class="t"></i></div>
+      <div><i class="s"></i><i class="t"></i><i class="t"></i><i class="t"></i><i class="t"></i></div>
+    </div>
+    <div class="cv-text">
+      <b>교차검증: 학습에 쓴 병원으로는 채점하지 않습니다</b>
+      <span>병원을 5묶음으로 나눠 4묶음으로 학습하고, 남은 1묶음으로 채점합니다. 채점 묶음을 바꿔 5번 하면 모든 병원이 한 번씩 '처음 보는 병원'으로 채점됩니다. 묶음을 나누는 방식(시드)을 10번 바꿔 반복해 평균과 범위를 냈습니다.</span>
+      <div class="legend"><span><i style="background: var(--dot-off)"></i>학습</span><span><i style="background: var(--accent)"></i>채점</span></div>
+    </div>
+  </div>
+  <div class="table-box"><table>
+    <thead><tr><th>지표 (교차검증 10회 평균)</th><th class="r">결과</th><th class="r">범위</th><th>목표</th></tr></thead>
+    <tbody>
+      <tr><td>상위 20% 정밀도</td><td class="r num">61.9%</td><td class="r num">60.0~64.2%</td><td>무작위(17.7%)의 2배 이상 ✓</td></tr>
+      <tr><td>무작위 대비 배수</td><td class="r num">3.50배</td><td class="r num">3.39~3.63</td><td>2.0배 이상 ✓</td></tr>
+      <tr><td>상위 20% 포착률</td><td class="r num">70.0%</td><td class="r num">—</td><td>40% 이상 ✓</td></tr>
+      <tr class="sub"><td>순위 정확도 (AUC)</td><td class="r num">0.903</td><td class="r num">0.899~0.907</td><td>참고</td></tr>
+    </tbody>
+  </table></div>
+    </div>
+  </details>
+</section>
+
+<section id="variables">
+  <div class="sec-head"><span class="stage">Step 2</span><h2>어떤 병원이 입점하는가</h2></div>
+    <p>점은 다른 세 조건이 같을 때 입점 가능성(오즈)이 몇 배가 되는지, 선은 95% 신뢰구간입니다. 1보다 오른쪽이면 입점 가능성을 높이고, 왼쪽이면 낮춥니다. 네 변수 모두 신뢰구간이 1을 넘지 않아 방향이 분명합니다. 가장 큰 것은 라식·라섹 시행으로, 전문의 1명인 작은 의원끼리 비교해도 입점 비율이 36% 대 4%였습니다.</p>
+  <div class="chart-box" id="forest" role="img" aria-label="오즈비와 95% 신뢰구간: 라식·라섹 시행 7.16 (3.39~15.10), 안과 전문의 1명당 1.42 (1.16~1.73), 반경 1km 안과 1곳당 1.07 (1.04~1.10), 개원 연차 1년당 0.90 (0.87~0.94)"></div>
+
+
+  <details class="more">
+    <summary>변수별 실제 입점 비율 (막대 그래프 4개)</summary>
+    <div class="more-body">
+  <p class="note">점선은 전체 평균(17.7%), 막대 아래 숫자는 그 구간의 병원 수입니다. 20곳 미만인 구간은 옅게 칠했습니다.</p>
+  <div class="facets" id="facets"></div>
+  <p class="note">r은 변수와 입점 여부(입점=1)의 상관계수로, 0이면 관계가 없고 1(또는 −1)에 가까울수록 관계가 강합니다. 이 그래프는 변수를 하나씩 본 것이라, 다른 변수의 영향이 섞여 있습니다. 다른 조건을 같게 맞춘 효과는 아래 오즈비입니다.</p>
+    </div>
+  </details>
+  <details class="more">
+    <summary>개원 연차만 오즈비가 1보다 작은 이유</summary>
+    <div class="more-body">
+  <div class="readme">
+    <span class="cap">참고: 개원 연차만 오즈비가 1보다 작은 이유</span>
+    <p>네 변수 중 개원 연차만 오즈비가 0.90으로 1보다 작습니다. 변수가 '개원 후 몇 년'이라 숫자가 클수록 오래된 병원이고, 1보다 작은 오즈비는 오래될수록 입점 가능성이 낮아진다는 뜻입니다. 뒤집어 말하면 개원한 지 얼마 안 된 의원일수록 입점 가능성이 높다는 같은 이야기입니다. 그래서 핵심 발견에서는 "개원한 지 오래되지 않은 의원"으로 적었습니다.</p>
+    <ul>
+      <li>1년마다 약 10%씩 곱해져 줄어듭니다. 0.90을 10번 곱하면 약 0.37이라, 20년 된 의원의 입점 오즈는 10년 된 의원의 약 0.37배입니다. 거꾸로 10년 된 의원은 약 2.7배입니다.</li>
+      <li>실제 비율로도 같은 방향입니다: 개원 10년 이하 32%, 20년 초과 5%.</li>
+      <li>"새로 연 병원이 아직 플랫폼에 안 올라와서 생긴 착시 아닐까?"는 사이클 1에서 확인했습니다. 2026년 개원 의원 18곳을 빼고 돌려도 무작위 대비 3.46배로 거의 같아, 그런 왜곡은 작았습니다.</li>
+      <li><strong>이유는 추정입니다.</strong> 새로 연 의원은 환자를 새로 모아야 해서 플랫폼 광고에 적극적이고, 오래된 의원은 소개·단골 환자 기반이 있어 플랫폼이 덜 필요할 수 있습니다. 관계는 분명하지만 이 데이터로 이유까지 확인하지는 못했습니다.</li>
+    </ul>
+  </div>
+    </div>
+  </details>
+  <details class="more">
+    <summary>회귀분석 결과표 (계수·표준오차·p값·VIF)</summary>
+    <div class="more-body">
+  <div class="table-box"><table class="reg">
+    <thead><tr>
+      <th>변수</th><th class="r">입점 평균</th><th class="r">미입점 평균</th>
+      <th class="r">계수 B</th><th class="r">표준오차</th><th class="r">z</th><th class="r">p값</th>
+      <th class="r">오즈비</th><th class="r">95% 신뢰구간</th><th class="r">VIF</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>라식·라섹 시행<span class="unit">비급여 가격 신고 (예=1)</span></td><td class="r">73%</td><td class="r">12%</td><td class="r">1.968</td><td class="r">0.381</td><td class="r">5.17</td><td class="r">&lt;0.001</td><td class="r"><strong>7.16</strong></td><td class="r">3.39~15.10</td><td class="r">1.66</td></tr>
+      <tr><td>안과 전문의 수<span class="unit">1명당</span></td><td class="r">3.04명</td><td class="r">1.37명</td><td class="r">0.348</td><td class="r">0.103</td><td class="r">3.38</td><td class="r">&lt;0.001</td><td class="r"><strong>1.42</strong></td><td class="r">1.16~1.73</td><td class="r">1.38</td></tr>
+      <tr><td>반경 1km 안과 수<span class="unit">1곳당</span></td><td class="r">17.65곳</td><td class="r">4.59곳</td><td class="r">0.065</td><td class="r">0.015</td><td class="r">4.36</td><td class="r">&lt;0.001</td><td class="r"><strong>1.07</strong></td><td class="r">1.04~1.10</td><td class="r">1.33</td></tr>
+      <tr><td>개원 연차<span class="unit">1년당</span></td><td class="r">10.11년</td><td class="r">19.26년</td><td class="r">−0.100</td><td class="r">0.021</td><td class="r">−4.77</td><td class="r">&lt;0.001</td><td class="r"><strong>0.90</strong></td><td class="r">0.87~0.94</td><td class="r">1.05</td></tr>
+      <tr class="sub"><td>절편</td><td class="r">—</td><td class="r">—</td><td class="r">−2.302</td><td class="r">0.347</td><td class="r">−6.64</td><td class="r">&lt;0.001</td><td class="r">0.10</td><td class="r">0.05~0.20</td><td class="r">—</td></tr>
+    </tbody>
+    <caption>로지스틱 회귀, 서울 안과 의원 475곳 (입점 84곳). 계수 해석용으로 규제 없이 전체 병원에 적합했습니다. 순위 점수는 같은 변수에 표준화·L2 규제·클래스 가중을 더한 모델로 매기고, 성능은 위의 교차검증 지표로만 봅니다. VIF는 변수끼리 겹치는 정도로, 5보다 작으면 겹침이 작습니다.</caption>
+  </table></div>
+    </div>
+  </details>
+
+</section>
+
+<section id="proposal">
+  <div class="sec-head"><span class="stage">Step 3</span><h2>제안서 자동 생성</h2></div>
+  <p>Top 30 병원마다 1페이지 제안서를 Claude Code 스킬(<code>/proposal 1 2 3</code>)로 만듭니다. AI가 그럴듯한 숫자를 지어내는 것이 가장 위험하다고 보고, 숫자는 코드가 계산하고 AI는 그 숫자만 보고 문장을 쓰게 나눴습니다. 문장은 자동 검사를 통과해야 제안서로 저장됩니다.</p>
+  <ol class="flow">
+    <li><span class="n">1/4</span><span class="who">코드</span><b>숫자 뽑기</b><span class="d">구 통계, 병원 특성, 손익분기 표를 계산해 facts 파일로 저장</span></li>
+    <li><span class="n">2/4</span><span class="who">AI</span><b>문장 쓰기</b><span class="d">facts만 보고 도입·추천 이유·미팅 질문 작성</span></li>
+    <li class="check"><span class="n">3/4</span><span class="who">코드</span><b>자동 검사</b><span class="d">근거 없는 숫자, 병원명, 과장·수수료 표현, 선정 기준 노출, '(가정)' 누락</span></li>
+    <li><span class="n">4/4</span><span class="who">코드</span><b>조립·기록</b><span class="d">제안서와 익명본 저장</span></li>
+  </ol>
+  <div class="loop"><svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true"><path d="M30 4 H10 a5 5 0 0 0 0 10 H24 M27 11 l3 3 -3 3"/></svg>검사에 실패하면 이유를 보고 2단계로 돌아가 문장만 고쳐 다시 검사합니다.</div>
+
+  <details class="more">
+    <summary>자동 검사가 실제로 잡아내는 것 (시연)</summary>
+    <div class="more-body">
+  <h3>검사가 실제로 잡아내는 것</h3>
+  <p>일부러 잘못 쓴 문장을 검사 스크립트(<code>src/03_proposal.py check</code>)에 넣어 돌린 결과입니다. 실제 제안서에 쓴 문장이 아니라 시연용입니다.</p>
+  <div class="checkdemo">
+    <div class="draft">
+      <span class="cap">AI가 이렇게 썼다면</span>
+      <p><mark class="bad" data-n="2">강북구 A안과</mark>는 강북구 <mark class="bad" data-n="3">최고</mark>의 안과로, 입점하면 신규 환자가 <mark class="bad" data-n="1">30%</mark> 늘어납니다.</p>
+      <p>월 <mark class="bad" data-n="4">광고비 100만원</mark>이면 충분히 회수됩니다.</p>
+    </div>
+    <div class="verdict">
+      <span class="cap">검사 결과 · 실패 → 2단계로</span>
+      <ol>
+        <li><b>facts에 없는 숫자: 30</b><span>코드가 계산하지 않은 숫자는 쓸 수 없음</span></li>
+        <li><b>병원명 노출 → '귀원'으로</b><span>제안서 본문에는 병원 이름 대신 '귀원'</span></li>
+        <li><b>금지 표현: '최고'</b><span>과장·보장·수수료 표현 9개를 막음</span></li>
+        <li><b>'광고비' 숫자에 '(가정)' 표시 필요</b><span>가정값은 반드시 가정이라고 밝힘</span></li>
+      </ol>
+    </div>
+  </div>
+    </div>
+  </details>
+
+  <div class="principle">
+    <div><span class="cap">영업 담당자만 보는 것</span><b>왜 이 병원을 골랐나</b><p>개원 연차, 전문의 수, 주변 안과 수 같은 선정 근거는 Top 30 내부 목록에만 둡니다.</p></div>
+    <div><span class="cap">병원에 보내는 것</span><b>병원에 무엇이 도움이 되나</b><p>지역의 플랫폼 입점 현황, 귀원이 공개 중인 시술 가격, 손익분기(가정), 상황을 듣는 질문만 씁니다. 선정 근거가 문장에 들어가면 검사에서 막힙니다.</p></div>
+  </div>
+
+  <h3>1위 강북구 A안과에 보낼 제안서 (익명본)</h3>
+  <div class="doc-legend">
+    <span><span class="fact">파란 밑줄</span> 코드가 계산한 숫자 (facts)</span>
+    <span><span class="assume">(가정)</span> 실제 값으로 바꿔 다시 계산하는 가정값</span>
+  </div>
+  <article class="doc">
+    <header class="doc-head">
+      <span class="doc-kicker">맞춤 제안서 · 1페이지</span>
+      <b>강북구 A안과</b>
+      <span class="doc-sub">추천 상품 <strong>시술 할인 이벤트 광고</strong> (시력교정 이벤트 노출) · 개인 분석, 실제 영업 자료 아님</span>
+    </header>
+    <p>귀원이 있는 강북구에는 안과 의원 <span class="fact" title="강북구 안과 의원 수">12곳</span>이 있지만, 플랫폼에 입점한 곳은 아직 <span class="fact" title="강북구 입점 안과 수·비율">1곳(8%)</span>으로 서울 평균(<span class="fact" title="서울 입점 비율">18%</span>)보다 낮습니다. 지역에서 시력교정 환자에게 먼저 보일 수 있는 시점이라고 보고 제안드립니다.</p>
+    <div class="doc-stats">
+      <div><span>강북구 안과 의원</span><b><span class="fact">12곳</span></b></div>
+      <div><span>강북구 플랫폼 입점 안과</span><b><span class="fact">1곳 (8%)</span></b></div>
+      <div><span>서울 평균 입점 비율</span><b><span class="fact">18%</span></b></div>
+    </div>
+    <div class="doc-sec">
+      <span class="doc-h">추천 상품: 시술 할인 이벤트 광고</span>
+      <p>귀원은 라식·라섹과 다초점 백내장 렌즈 가격을 이미 공개하고 있어, 가격을 비교하며 병원을 고르는 시력교정 환자에게 시술 할인 이벤트 광고로 바로 보일 수 있습니다. 서울에서 라식·라섹을 하는 안과 의원의 <span class="fact" title="서울 라식·라섹 시행 의원 입점 비율">56%</span>가 이미 입점해 있지만 강북구에는 입점 안과가 적어, 같은 지역에서 먼저 자리를 잡을 수 있습니다.</p>
+    </div>
+    <div class="doc-roi">
+      <div class="roi-main">
+        <span class="doc-h">손익분기 예약 건수</span>
+        <div class="be"><b>월 3건</b><span class="assume">(가정)</span></div>
+        <span class="be-f">월 광고비 100만원 <span class="assume">(가정)</span> ÷ (라섹 70만원 <span class="assume">(가정)</span> × 공헌이익률 50% <span class="assume">(가정)</span>)</span>
+      </div>
+      <div class="roi-side">
+        <span class="be-f">공헌이익률이 달라지면 (모두 가정)</span>
+        <div class="sens" role="img" aria-label="공헌이익률별 손익분기: 30% 월 5건, 40% 월 4건, 50% 월 3건, 60% 월 3건 (모두 가정)">
+          <div><span>30%</span><i style="width:100%"></i><em>5건</em></div>
+          <div><span>40%</span><i style="width:80%"></i><em>4건</em></div>
+          <div class="cur"><span>50%</span><i style="width:60%"></i><em>3건</em></div>
+          <div><span>60%</span><i style="width:60%"></i><em>3건</em></div>
+        </div>
+        <span class="be-f">광고는 정액 기준이며, 환자 1명당 수수료 구조는 제안하지 않습니다.</span>
+      </div>
+    </div>
+    <div class="doc-sec">
+      <span class="doc-h">미팅에서 확인할 질문</span>
+      <ol class="qs">
+        <li>현재 신규 시력교정 환자는 주로 어떤 경로로 귀원을 알게 되시나요?</li>
+        <li>시력교정과 백내장 중 앞으로 어느 쪽 예약을 더 늘리고 싶으신가요?</li>
+      </ol>
+      <p class="note">질문은 상품을 파는 질문이 아니라 병원의 상황을 듣는 질문으로 쓰게 했습니다.</p>
+    </div>
+  </article>
+</section>
+
+<section id="limits">
+  <div class="sec-head"><span class="stage">Step 4</span><h2>한계와 다음 단계</h2></div>
+  <p>한계마다 이미 점검한 것과, 다음에 할 일을 같이 적었습니다.</p>
+  <div class="claims">
+    <div class="can"><span class="cap">확인한 것</span><p>공개 데이터만으로도 입점하는 병원의 특징이 분명하게 드러나고, 이 특징으로 만든 점수는 학습에 쓰지 않은 병원에서도 입점 병원을 상위에 모읍니다(무작위 대비 3.5배).</p></div>
+    <div class="cannot"><span class="cap">아직 모르는 것</span><p>Top 30 병원이 실제로 계약할지, 그리고 그 특징이 입점의 원인인지는 아직 모릅니다. 이건 방문과 미팅 결과로 확인할 부분입니다.</p></div>
+  </div>
+  <details class="more">
+    <summary>한계 6가지와 이미 확인한 것</summary>
+    <div class="more-body">
+  <div class="lims">
+    <article class="lim">
+      <span class="lim-k k-a">해석</span>
+      <h3>실제 계약까지는 검증하지 못했습니다</h3>
+      <p>모델은 '이미 입점한 병원과 닮았는가'를 맞힙니다. Top 30이 실제로 계약할지는 아직 모릅니다.</p>
+      <dl>
+        <div><dt>이미 확인한 것</dt><dd>학습에 쓰지 않은 병원으로만 채점해(교차검증) 숫자를 부풀리지 않았습니다.</dd></div>
+        <div><dt>다음 단계</dt><dd>Top 30 방문·미팅·계약 결과를 기록해 정답으로 다시 학습합니다.</dd></div>
+      </dl>
+    </article>
+    <article class="lim">
+      <span class="lim-k k-a">해석</span>
+      <h3>관계이지 원인은 아닙니다</h3>
+      <p>'라식·라섹을 하는 의원이 입점한다'는 것이지, 라식·라섹이 입점을 일으킨다는 뜻은 아닙니다.</p>
+      <dl>
+        <div><dt>이미 확인한 것</dt><dd>비급여 가격 신고는 의료법상 의무라, 입점 때문에 신고했을 가능성(원인과 결과가 뒤바뀜)은 낮다고 판단했습니다.</dd></div>
+        <div><dt>다음 단계</dt><dd>미팅에서 원장에게 입점·미입점 이유를 직접 듣고 가설에 반영합니다.</dd></div>
+      </dl>
+    </article>
+    <article class="lim">
+      <span class="lim-k k-a">해석</span>
+      <h3>상권과 경쟁이 섞여 있습니다</h3>
+      <p>반경 1km 안과 수는 강남·서초 상권과 겹쳐, 경쟁 때문인지 상권 때문인지 구분하지 못합니다. Top 30 중 11곳이 강남구입니다.</p>
+      <dl>
+        <div><dt>이미 확인한 것</dt><dd>강남 쏠림을 숨기지 않고 Top 30 요약에 그대로 표시했습니다.</dd></div>
+        <div><dt>다음 단계</dt><dd>구별 효과를 따로 넣거나, 역세권 변수(심평원 교통정보, 지금은 서울 안과의 19%만 정보 있음)를 보강해 다시 검증합니다.</dd></div>
+      </dl>
+    </article>
+    <article class="lim">
+      <span class="lim-k k-b">데이터</span>
+      <h3>표본이 작습니다</h3>
+      <p>입점 병원이 84곳이라 일부 효과의 범위가 넓습니다. 라식·라섹 오즈비의 95% 신뢰구간은 3.39~15.10입니다.</p>
+      <dl>
+        <div><dt>이미 확인한 것</dt><dd>순위 성능은 안정적입니다(시드 10개 배수 범위 3.39~3.63). 네 변수 모두 신뢰구간이 1을 넘지 않아 방향은 분명합니다.</dd></div>
+        <div><dt>다음 단계</dt><dd>피부과·치과 등 다른 진료과로 같은 방법을 반복해 표본을 늘립니다.</dd></div>
+      </dl>
+    </article>
+    <article class="lim">
+      <span class="lim-k k-b">데이터</span>
+      <h3>매칭과 자료 시점이 다릅니다</h3>
+      <p>플랫폼·비급여 목록을 병원명과 구로 이었고, 자료 시점이 2025-12(장비)부터 2026-11(플랫폼)까지 다릅니다.</p>
+      <dl>
+        <div><dt>이미 확인한 것</dt><dd>이름이 애매한 11곳은 도로명 주소로 직접 확인했습니다. 2026년 개원 18곳을 빼고 돌려도 3.46배로 거의 같았습니다.</dd></div>
+        <div><dt>다음 단계</dt><dd>주소 기반으로 매칭하고, 같은 시점의 자료로 다시 맞춥니다.</dd></div>
+      </dl>
+    </article>
+    <article class="lim">
+      <span class="lim-k k-c">가정</span>
+      <h3>ROI와 추천 상품은 가정입니다</h3>
+      <p>월 광고비 100만원, 라섹 70만원, 공헌이익률 50%, 추천 상품 규칙은 모두 실제 값이 아닙니다.</p>
+      <dl>
+        <div><dt>이미 확인한 것</dt><dd>모든 가정값에 '(가정)'을 붙였고, 공헌이익률 30~60%에서 손익분기가 월 3~5건으로 바뀌는 민감도를 함께 보여 줍니다.</dd></div>
+        <div><dt>다음 단계</dt><dd>실제 상품 단가와 진료과별 시술가를 넣어 다시 계산합니다 (src/roi.py).</dd></div>
+      </dl>
+    </article>
+  </div>
+  <p class="note">분석 대상 밖: 재단이 운영하는 대형 안과병원 5곳, 심평원 2026-09 자료에 없는 플랫폼 제휴 병원 6곳(자료 이후 개원 추정 등). 기술: 이 PC의 보안 정책이 통계 라이브러리를 막아 로지스틱 회귀·교차검증·AUC를 numpy로 직접 구현했고, scikit-learn 결과와 직접 대조하지는 못했습니다.</p>
+    </div>
+  </details>
+
+  <details class="more">
+    <summary>다음에 해 보고 싶은 것</summary>
+    <div class="more-body">
+  <h3>다음에 해 보고 싶은 것</h3>
+  <ol class="road">
+    <li><span class="n">1</span><b>Top 30 방문 결과 기록</b><span>미팅 여부, 반응, 계약 여부를 병원별로 남김</span></li>
+    <li><span class="n">2</span><b>계약 결과로 다시 학습</b><span>정답을 '입점'에서 '계약'으로 바꿔 "계약할 병원"을 예측</span></li>
+    <li><span class="n">3</span><b>실제 단가로 ROI 재계산</b><span>상품별 광고비와 시술가로 가정값을 교체</span></li>
+    <li><span class="n">4</span><b>다른 진료과로 확장</b><span>비급여 신고를 주력 시술로 보는 방법을 피부과·치과에 적용</span></li>
+    <li><span class="n">5</span><b>피드백을 검사 규칙으로</b><span>영업 담당자 의견을 제안서 자동 검사 항목으로 쌓음</span></li>
+  </ol>
+    </div>
+  </details>
+</section>
+
+<footer>
+  <span>개인 케이스 스터디 · 공개 데이터 기반. 특정 회사와 관계없으며, 플랫폼의 비공개 데이터는 쓰지 않았습니다.</span>
+  <span>출처: 건강보험심사평가원 공개 자료(전국 병의원 및 약국 현황, 비급여 진료비용 정보, 의료장비 상세 현황), 플랫폼 공개 목록. 병원명은 모두 익명입니다.</span>
+  <span>분석 도구: Claude Code (AI 코딩 에이전트), Python·numpy. 코드와 실험 기록은 GitHub 레포에 있습니다.</span>
+</footer>
+
+</div>
+
+<script>
+// 점 그림: 점수 구간별 입점 병원 수 (교차검증 점수, 구간마다 95곳)
+(function () {
+  var bands = [["상위 20%", 59], ["20~40%", 17], ["40~60%", 5], ["60~80%", 1], ["하위 20%", 2]];
+  var box = document.getElementById("waffle");
+  bands.forEach(function (b, i) {
+    var el = document.createElement("div");
+    el.className = "band" + (i === 0 ? " top" : "");
+    el.title = b[0] + ": 95곳 중 입점 " + b[1] + "곳 (" + Math.round(b[1] / 95 * 100) + "%)";
+    var dots = '<div class="dots">';
+    for (var k = 0; k < 95; k++) dots += k < b[1] ? '<i class="on"></i>' : "<i></i>";
+    dots += "</div>";
+    el.innerHTML = dots + '<div class="band-label"><b>' + b[1] + "/95</b><span>" + b[0] + "</span></div>";
+    box.appendChild(el);
+  });
+})();
+
+// 변수별 그래프: 구간별 실제 입점 비율 (outputs/variable_bins.csv)
+(function () {
+  var facets = [
+    { name: "라식·라섹 시행", r: "0.55", sub: "비급여 가격 신고 여부", bins: [["아니요", 23, 366], ["예", 61, 109]] },
+    { name: "반경 1km 안과 수", r: "0.52", sub: "주변에 안과가 많을수록", bins: [["0~2곳", 10, 129], ["3~5곳", 17, 204], ["6~10곳", 19, 91], ["11~20곳", 7, 10], ["21곳+", 31, 41]] },
+    { name: "안과 전문의 수", r: "0.44", sub: "전문의가 많을수록", bins: [["1명", 24, 342], ["2명", 20, 59], ["3명", 13, 32], ["4~5명", 14, 23], ["6명+", 13, 19]] },
+    { name: "개원 연차", r: "−0.29", sub: "개원한 지 오래될수록 낮아짐", bins: [["5년↓", 32, 96], ["5~10", 20, 66], ["10~15", 10, 51], ["15~20", 13, 67], ["20~30", 8, 122], ["30년↑", 1, 73]] }
+  ];
+  var W = 340, H = 196, L = 34, R = 334, T = 18, B = 150, MAX = 80, base = 17.7;
+  var y = function (p) { return B - p / MAX * (B - T); };
+  var box = document.getElementById("facets");
+  facets.forEach(function (f) {
+    var n = f.bins.length, slot = (R - L) / n, bw = Math.min(40, slot * 0.62);
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg">';
+    [0, 20, 40, 60, 80].forEach(function (t) {
+      s += '<line class="grid" x1="' + L + '" x2="' + R + '" y1="' + y(t) + '" y2="' + y(t) + '"/>';
+      s += '<text x="' + (L - 6) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + t + "%</text>";
+    });
+    f.bins.forEach(function (b, i) {
+      var p = b[1] / b[2] * 100, cx = L + slot * (i + 0.5), top = y(p), h = Math.max(B - top, 1);
+      var x0 = cx - bw / 2, rr = Math.min(4, h);
+      s += '<path class="bar' + (b[2] < 20 ? " thin" : "") + '" d="M' + x0 + "," + B + "V" + (top + rr) + "Q" + x0 + "," + top + " " + (x0 + rr) + "," + top +
+        "H" + (x0 + bw - rr) + "Q" + (x0 + bw) + "," + top + " " + (x0 + bw) + "," + (top + rr) + "V" + B + 'Z"><title>' +
+        f.name + " " + b[0] + ": " + b[2] + "곳 중 " + b[1] + "곳 입점 (" + p.toFixed(1) + "%)</title></path>";
+      s += '<text class="val" x="' + cx + '" y="' + (top - 5) + '" text-anchor="middle">' + Math.round(p) + "%</text>";
+      s += '<text x="' + cx + '" y="' + (B + 16) + '" text-anchor="middle">' + b[0] + "</text>";
+      s += '<text class="nn" x="' + cx + '" y="' + (B + 30) + '" text-anchor="middle">' + b[2] + "곳</text>";
+    });
+    s += '<line class="base" x1="' + L + '" x2="' + R + '" y1="' + y(base) + '" y2="' + y(base) + '"/>';
+    s += "</svg>";
+    var el = document.createElement("div");
+    el.className = "facet";
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", f.name + " 구간별 입점 비율: " + f.bins.map(function (b) { return b[0] + " " + Math.round(b[1] / b[2] * 100) + "%"; }).join(", "));
+    el.innerHTML = '<div class="facet-head"><b>' + f.name + '</b><span class="r">r = ' + f.r + '</span></div><span class="facet-sub">' + f.sub + "</span>" + s;
+    box.appendChild(el);
+  });
+})();
+
+// 오즈비 도표: 로그 눈금, 1 기준선, 95% 신뢰구간
+(function () {
+  var rows = [
+    ["라식·라섹 시행", "예 vs 아니요", 7.16, 3.39, 15.10, "약 7배"],
+    ["안과 전문의 수", "1명당", 1.42, 1.16, 1.73, "1명당 +42%"],
+    ["반경 1km 안과 수", "1곳당", 1.07, 1.04, 1.10, "1곳당 +7%"],
+    ["개원 연차", "1년당", 0.90, 0.87, 0.94, "1년당 −10%"]
+  ];
+  var W = 720, L = 170, R = 640, top = 14, rowH = 46, H = top + rows.length * rowH + 34;
+  var lo = Math.log(0.5), hi = Math.log(20);
+  var x = function (v) { return L + (Math.log(v) - lo) / (hi - lo) * (R - L); };
+  var s = '<svg viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg">';
+  [0.5, 1, 2, 5, 10, 20].forEach(function (t) {
+    s += '<line class="' + (t === 1 ? "ref" : "grid") + '" x1="' + x(t) + '" x2="' + x(t) + '" y1="' + (top - 6) + '" y2="' + (top + rows.length * rowH) + '"/>';
+    s += '<text class="t2" x="' + x(t) + '" y="' + (top + rows.length * rowH + 16) + '" text-anchor="middle">' + t + "</text>";
+  });
+  s += '<text class="t2" x="' + x(1) + '" y="' + (H - 2) + '" text-anchor="middle">← 입점 가능성 낮춤 · 오즈비(로그 눈금) · 높임 →</text>';
+  rows.forEach(function (r, i) {
+    var y = top + i * rowH + rowH / 2, up = r[2] > 1;
+    s += '<text x="0" y="' + (y - 2) + '" font-size="13" font-weight="700">' + r[0] + "</text>";
+    s += '<text class="t2" x="0" y="' + (y + 14) + '">' + r[1] + "</text>";
+    s += '<line class="' + (up ? "ci-up" : "ci-dn") + '" x1="' + x(r[3]) + '" x2="' + x(r[4]) + '" y1="' + y + '" y2="' + y + '"/>';
+    s += '<circle class="' + (up ? "pt-up" : "pt-dn") + '" cx="' + x(r[2]) + '" cy="' + y + '" r="6"><title>' + r[0] + " 오즈비 " + r[2] + " (95% 신뢰구간 " + r[3] + "~" + r[4] + ")</title></circle>";
+    s += '<text class="nm" x="' + (x(r[4]) + 10) + '" y="' + (y + 4) + '">' + r[2].toFixed(2) + '<tspan class="plain" dx="8">' + r[5] + "</tspan></text>";
+  });
+  document.getElementById("forest").innerHTML = s + "</svg>";
+})();
+// 목차: 지금 읽는 섹션을 표시 (없어도 페이지는 그대로 읽힘)
+(function () {
+  if (!("IntersectionObserver" in window)) return;
+  var links = {};
+  document.querySelectorAll(".toc a").forEach(function (a) { links[a.getAttribute("href").slice(1)] = a; });
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting || !links[en.target.id]) return;
+      Object.keys(links).forEach(function (k) { links[k].classList.toggle("on", k === en.target.id); });
+      var a = links[en.target.id], bar = a.parentElement;
+      bar.scrollTo({ left: a.offsetLeft - 16, behavior: "smooth" });
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  document.querySelectorAll("section[id]").forEach(function (s) { io.observe(s); });
+})();
+
+// Top 30 전체 표 (outputs/public/top30_public.csv, 병원명 익명) + 추천 상품 필터
+(function () {
+  var rows = [[1, "강북구 A안과", "5년 이하", "4명 이상", "5곳 이하", 1, ["안과 전문의 4명 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [2, "강남구 A안과", "20년 초과", "4명 이상", "6~10곳", 1, ["안과 전문의 4명 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [3, "강남구 B안과", "20년 초과", "4명 이상", "11곳 이상", 1, ["반경 1km 안과 11곳 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [4, "강남구 C안과", "11~20년", "1명", "11곳 이상", 1, ["반경 1km 안과 11곳 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [5, "강남구 D안과", "11~20년", "2~3명", "11곳 이상", 1, ["반경 1km 안과 11곳 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [6, "강서구 A안과", "11~20년", "4명 이상", "6~10곳", 1, ["안과 전문의 4명 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [7, "서초구 A안과", "11~20년", "1명", "11곳 이상", 1, ["반경 1km 안과 11곳 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [8, "은평구 A안과", "5년 이하", "2~3명", "6~10곳", 1, ["라식·라섹 시행", "개원 5년 이하"], "시술 할인 이벤트 광고"], [9, "강남구 E안과", "11~20년", "1명", "11곳 이상", 1, ["반경 1km 안과 11곳 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [10, "구로구 A안과", "5년 이하", "2~3명", "5곳 이하", 1, ["라식·라섹 시행", "개원 5년 이하"], "시술 할인 이벤트 광고"], [11, "노원구 A안과", "5년 이하", "2~3명", "6~10곳", 1, ["라식·라섹 시행", "개원 5년 이하"], "시술 할인 이벤트 광고"], [12, "강북구 B안과", "20년 초과", "4명 이상", "5곳 이하", 1, ["안과 전문의 4명 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [13, "강남구 F안과", "6~10년", "4명 이상", "6~10곳", 0, ["안과 전문의 4명 이상", "개원 6~10년"], "상담·견적 연결"], [14, "마포구 A안과", "11~20년", "4명 이상", "5곳 이하", 1, ["라식·라섹 시행", "안과 전문의 4명 이상"], "시술 할인 이벤트 광고"], [15, "서초구 B안과", "5년 이하", "1명", "6~10곳", 1, ["라식·라섹 시행", "개원 5년 이하"], "시술 할인 이벤트 광고"], [16, "노원구 B안과", "6~10년", "2~3명", "5곳 이하", 1, ["라식·라섹 시행", "개원 6~10년"], "시술 할인 이벤트 광고"], [17, "구로구 B안과", "5년 이하", "4명 이상", "5곳 이하", 0, ["안과 전문의 4명 이상", "개원 5년 이하"], "상담·견적 연결"], [18, "동대문구 A안과", "11~20년", "4명 이상", "5곳 이하", 1, ["라식·라섹 시행", "안과 전문의 4명 이상"], "시술 할인 이벤트 광고"], [19, "은평구 B안과", "11~20년", "2~3명", "6~10곳", 1, ["라식·라섹 시행", "안과 전문의 2~3명"], "시술 할인 이벤트 광고"], [20, "강남구 G안과", "5년 이하", "1명", "11곳 이상", 0, ["반경 1km 안과 11곳 이상", "개원 5년 이하"], "상담·견적 연결"], [21, "강남구 H안과", "20년 초과", "4명 이상", "6~10곳", 1, ["안과 전문의 4명 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [22, "송파구 A안과", "6~10년", "2~3명", "6~10곳", 1, ["라식·라섹 시행", "개원 6~10년"], "시술 할인 이벤트 광고"], [23, "강남구 I안과", "6~10년", "1명", "6~10곳", 1, ["라식·라섹 시행", "개원 6~10년"], "시술 할인 이벤트 광고"], [24, "종로구 A안과", "20년 초과", "4명 이상", "5곳 이하", 1, ["안과 전문의 4명 이상", "라식·라섹 시행"], "시술 할인 이벤트 광고"], [25, "서초구 C안과", "5년 이하", "1명", "11곳 이상", 0, ["반경 1km 안과 11곳 이상", "개원 5년 이하"], "검진·진료 할인 상품"], [26, "강남구 J안과", "5년 이하", "4명 이상", "6~10곳", 0, ["개원 5년 이하", "안과 전문의 4명 이상"], "검진·진료 할인 상품"], [27, "강남구 K안과", "6~10년", "1명", "6~10곳", 1, ["라식·라섹 시행", "개원 6~10년"], "시술 할인 이벤트 광고"], [28, "강북구 C안과", "20년 초과", "4명 이상", "5곳 이하", 1, ["라식·라섹 시행", "안과 전문의 4명 이상"], "시술 할인 이벤트 광고"], [29, "양천구 A안과", "11~20년", "2~3명", "5곳 이하", 1, ["라식·라섹 시행", "개원 11~20년"], "시술 할인 이벤트 광고"], [30, "강서구 B안과", "5년 이하", "4명 이상", "6~10곳", 0, ["개원 5년 이하", "안과 전문의 4명 이상"], "상담·견적 연결"]];
+  var body = document.getElementById("t30");
+  function draw(f) {
+    body.innerHTML = rows.filter(function (r) { return !f || r[7] === f; }).map(function (r) {
+      return '<tr' + (r[0] <= 5 ? ' class="top5"' : '') + '><td class="r">' + r[0] + '</td><td>' + r[1] + '</td><td class="r">' + r[2] + '</td><td class="r">' + r[3] + '</td><td class="r">' + r[4] + '</td>' +
+        '<td>' + (r[5] ? '<span class="yes">시행</span>' : '<span class="no">—</span>') + '</td>' +
+        '<td><div class="why2">' + r[6].map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</div></td>' +
+        '<td><span class="prod-tag">' + r[7] + '</span></td></tr>';
+    }).join('');
+  }
+  var btns = document.querySelectorAll(".filters button");
+  btns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      btns.forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      draw(b.dataset.f);
+    });
+  });
+  draw("");
+})();
+</script>
